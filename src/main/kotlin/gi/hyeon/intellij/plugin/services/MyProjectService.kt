@@ -1,7 +1,7 @@
-package com.github.hgijeon.intellijrefactoringplugin.services
+package gi.hyeon.intellij.plugin.services
 
-import com.github.hgijeon.intellijrefactoringplugin.MyBundle
 import com.intellij.openapi.project.Project
+import gi.hyeon.intellij.plugin.MyBundle
 
 class MyProjectService(project: Project) {
 

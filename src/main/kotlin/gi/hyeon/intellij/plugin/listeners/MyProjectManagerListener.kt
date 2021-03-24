@@ -1,9 +1,9 @@
-package com.github.hgijeon.intellijrefactoringplugin.listeners
+package gi.hyeon.intellij.plugin.listeners
 
-import com.github.hgijeon.intellijrefactoringplugin.services.MyProjectService
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
+import gi.hyeon.intellij.plugin.services.MyProjectService
 
 internal class MyProjectManagerListener : ProjectManagerListener {
 

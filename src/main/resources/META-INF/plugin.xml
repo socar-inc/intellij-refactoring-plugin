@@ -13,12 +13,12 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="com.github.hgijeon.intellijrefactoringplugin.services.MyApplicationService"/>
-        <projectService serviceImplementation="com.github.hgijeon.intellijrefactoringplugin.services.MyProjectService"/>
+        <applicationService serviceImplementation="gi.hyeon.intellij.plugin.services.MyApplicationService"/>
+        <projectService serviceImplementation="gi.hyeon.intellij.plugin.services.MyProjectService"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="com.github.hgijeon.intellijrefactoringplugin.listeners.MyProjectManagerListener"
+        <listener class="gi.hyeon.intellij.plugin.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
 </idea-plugin>
