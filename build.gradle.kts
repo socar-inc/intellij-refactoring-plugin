@@ -1,6 +1,7 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.changelog.closure
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.tasks.RunIdeTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -43,6 +44,21 @@ intellij {
 
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
     setPlugins(*properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty).toTypedArray())
+}
+
+tasks.withType<RunIdeTask> {
+    // gradle.properties 에 ideDirectory 가 지정되어있으면 해당 IDE 사용.
+    properties("ideDirectory").let {
+        when {
+            it.isBlank() -> return@let
+            !File(it).exists() -> {
+                println("파일 없음: $it")
+                return@let
+            }
+        }
+
+        setIdeDirectory(it)
+    }
 }
 
 // Configure gradle-changelog-plugin plugin.

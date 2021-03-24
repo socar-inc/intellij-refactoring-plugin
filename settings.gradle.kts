@@ -1,1 +1,1 @@
-rootProject.name = "intellij-refactoring-plugin"
+rootProject.name = "IntelliJ Platform Plugin"
