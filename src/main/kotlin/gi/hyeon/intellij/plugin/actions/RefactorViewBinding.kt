@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
+import gi.hyeon.refactoring.runRefactoring
 
 class RefactorViewBinding : AnAction() {
     override fun update(event: AnActionEvent) {
@@ -22,7 +23,7 @@ class RefactorViewBinding : AnAction() {
             "취소",
             Messages.getInformationIcon()
         ).let {
-            if (it == Messages.OK) println("ok")
+            if (it == Messages.OK) runRefactoring(event.project!!)
         }
     }
 }
