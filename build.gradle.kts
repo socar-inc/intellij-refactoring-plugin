@@ -31,6 +31,9 @@ repositories {
 }
 dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.15.0")
+
+    testImplementation(platform("org.junit:junit-bom:5.7.1"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
 }
 
 // Configure gradle-intellij-plugin plugin.
@@ -134,5 +137,9 @@ tasks {
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
         // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
         channels(properties("pluginVersion").split('-').getOrElse(1) { "default" }.split('.').first())
+    }
+
+    test {
+        useJUnitPlatform()
     }
 }
