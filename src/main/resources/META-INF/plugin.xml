@@ -1,11 +1,16 @@
 <idea-plugin>
-    <id>com.github.hgijeon.intellijrefactoringplugin</id>
-    <name>intellij-refactoring-plugin</name>
-    <vendor>hgijeon</vendor>
+    <id>gi.hyeon.jetbrains.plugin</id>
+    <name>Kotlin Refactoring</name>
+    <vendor>HyeonGi</vendor>
 
     <!-- Product and plugin compatibility requirements -->
     <!-- https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+
+    <!-- Kotlin PSI 를 다루기 위한 의존성. build.gradle: intellij.setPlugins() 와 함께 사용해야 함. -->
+    <depends>org.jetbrains.kotlin</depends>
+    <!-- Java PSI 를 다루기 위한 의존성. build.gradle: intellij.setPlugins() 와 함께 사용해야 함. -->
+    <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.github.hgijeon.intellijrefactoringplugin.services.MyApplicationService"/>
