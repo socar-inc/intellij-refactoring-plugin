@@ -43,7 +43,11 @@ fun runRefactoring(project: Project) {
                         it.applyActivityViewBinding(
                             project,
                             uniquePrefix,
-                            "gi.hyeon"
+                            when (module.name) {
+                                "root.app" -> "socar.Socar"
+                                "root.pairing-owner" -> "kr.socar.pairing.owner"
+                                else -> "unexpected"
+                            }
                         )
                     }
 
