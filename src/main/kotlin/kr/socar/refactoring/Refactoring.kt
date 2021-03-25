@@ -71,7 +71,11 @@ fun runRefactoring(project: Project) {
     }
 }
 
-fun KtClass.applyActivityViewBinding(project: Project, uniquePrefix: String, appPrefix: String): KtClass? {
+fun KtClass.applyActivityViewBinding(
+    project: Project,
+    uniquePrefix: String,
+    appPrefix: String
+): KtClass? {
     val isBaseActivity = superTypeListEntries
         .any { it.findDescendantOfType<KtNameReferenceExpression>()?.text == "BaseActivity" }
     if (!isBaseActivity) return null
@@ -97,8 +101,9 @@ fun KtClass.applyActivityViewBinding(project: Project, uniquePrefix: String, app
                                         .replace(
                                             "\n.*override fun getBaseLayoutId.*\n".toRegex(),
                                             "\noverride fun inflateViewBinding(layoutInflater: LayoutInflater) =\n" +
-                                                    "$bindingName.inflate(layoutInflater).also { binding = it }\n"
+                                                "$bindingName.inflate(layoutInflater).also { binding = it }\n"
                                         )
+                                        .replace("ButterKt.bind(this)\n", "")
                                 }
                                 .replace(uniquePrefix, "binding.")
                         )
