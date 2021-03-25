@@ -1,4 +1,4 @@
-package gi.hyeon.ext
+package kr.socar.ext
 
 val camelRegex = "(?<=[a-zA-Z])[A-Z]".toRegex()
 val snakeRegex = "_[a-zA-Z0-9]".toRegex()

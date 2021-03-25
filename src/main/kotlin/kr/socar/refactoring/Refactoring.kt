@@ -1,4 +1,4 @@
-package gi.hyeon.refactoring
+package kr.socar.refactoring
 
 import com.intellij.codeInsight.actions.OptimizeImportsProcessor
 import com.intellij.codeInsight.actions.RearrangeCodeProcessor
@@ -14,8 +14,8 @@ import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.elementType
 import com.intellij.util.castSafelyTo
-import gi.hyeon.ext.snakeToLowerCamelCase
-import gi.hyeon.ext.snakeToUpperCamelCase
+import kr.socar.ext.snakeToLowerCamelCase
+import kr.socar.ext.snakeToUpperCamelCase
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.formatter.commitAndUnblockDocument

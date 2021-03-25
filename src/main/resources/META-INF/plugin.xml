@@ -13,17 +13,17 @@
     <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <applicationService serviceImplementation="gi.hyeon.intellij.plugin.services.MyApplicationService"/>
-        <projectService serviceImplementation="gi.hyeon.intellij.plugin.services.MyProjectService"/>
+        <applicationService serviceImplementation="kr.socar.intellij.plugin.services.MyApplicationService"/>
+        <projectService serviceImplementation="kr.socar.intellij.plugin.services.MyProjectService"/>
     </extensions>
 
     <applicationListeners>
-        <listener class="gi.hyeon.intellij.plugin.listeners.MyProjectManagerListener"
+        <listener class="kr.socar.intellij.plugin.listeners.MyProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
 
     <actions>
-        <action id="org.intellij.sdk.action.PopupDialogAction" class="gi.hyeon.intellij.plugin.actions.RefactorViewBinding"
+        <action id="org.intellij.sdk.action.PopupDialogAction" class="kr.socar.intellij.plugin.actions.RefactorViewBinding"
             text="ViewBinding 리팩토링" description="안드로이드 코드에 view binding 적용.">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>

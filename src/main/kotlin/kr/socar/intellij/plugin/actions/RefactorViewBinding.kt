@@ -1,10 +1,10 @@
-package gi.hyeon.intellij.plugin.actions
+package kr.socar.intellij.plugin.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
-import gi.hyeon.refactoring.runRefactoring
+import kr.socar.refactoring.runRefactoring
 
 class RefactorViewBinding : AnAction() {
     override fun update(event: AnActionEvent) {

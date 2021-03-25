@@ -1,7 +1,7 @@
-package gi.hyeon.intellij.plugin.services
+package kr.socar.intellij.plugin.services
 
 import com.intellij.openapi.project.Project
-import gi.hyeon.intellij.plugin.MyBundle
+import kr.socar.intellij.plugin.MyBundle
 
 class MyProjectService(project: Project) {
 

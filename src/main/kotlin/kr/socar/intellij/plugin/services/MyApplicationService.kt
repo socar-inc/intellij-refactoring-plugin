@@ -1,6 +1,6 @@
-package gi.hyeon.intellij.plugin.services
+package kr.socar.intellij.plugin.services
 
-import gi.hyeon.intellij.plugin.MyBundle
+import kr.socar.intellij.plugin.MyBundle
 
 class MyApplicationService {
 

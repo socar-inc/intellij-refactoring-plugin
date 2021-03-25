@@ -1,9 +1,9 @@
-package gi.hyeon.intellij.plugin.listeners
+package kr.socar.intellij.plugin.listeners
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
-import gi.hyeon.intellij.plugin.services.MyProjectService
+import kr.socar.intellij.plugin.services.MyProjectService
 
 internal class MyProjectManagerListener : ProjectManagerListener {
 

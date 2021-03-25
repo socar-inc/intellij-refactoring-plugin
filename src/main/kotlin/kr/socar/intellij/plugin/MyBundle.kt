@@ -1,4 +1,4 @@
-package gi.hyeon.intellij.plugin
+package kr.socar.intellij.plugin
 
 import com.intellij.AbstractBundle
 import org.jetbrains.annotations.NonNls
