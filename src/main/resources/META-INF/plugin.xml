@@ -23,8 +23,14 @@
     </applicationListeners>
 
     <actions>
-        <action id="org.intellij.sdk.action.PopupDialogAction" class="kr.socar.intellij.plugin.actions.RefactorViewBinding"
-            text="ViewBinding 리팩토링" description="안드로이드 코드에 view binding 적용.">
+        <action id="kr.socar.intellij.plugin.actions.RefactorViewBindingActivity"
+            class="kr.socar.intellij.plugin.actions.RefactorViewBindingActivity"
+            text="ViewBinding 리팩토링: Activity" description="안드로이드 코드에 view binding 적용.">
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+        <action id="kr.socar.intellij.plugin.actions.RefactorViewBindingViewHolder"
+            class="kr.socar.intellij.plugin.actions.RefactorViewBindingViewHolder"
+            text="ViewBinding 리팩토링: ViewHolder" description="안드로이드 코드에 view binding 적용.">
             <add-to-group group-id="ToolsMenu" anchor="first"/>
         </action>
     </actions>

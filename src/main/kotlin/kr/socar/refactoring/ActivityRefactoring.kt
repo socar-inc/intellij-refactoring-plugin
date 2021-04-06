@@ -28,7 +28,7 @@ import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
 import org.jetbrains.kotlin.psi.psiUtil.referenceExpression
 
-fun runRefactoring(project: Project) {
+fun runActivityRefactoring(project: Project) {
     project.allModules().forEach { module ->
         FilenameIndex.getAllFilesByExt(project, "kt", module.moduleScope)
             .mapNotNull { it.toPsiFile(project) as? KtFile }
