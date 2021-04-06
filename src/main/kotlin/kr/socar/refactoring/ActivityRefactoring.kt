@@ -119,7 +119,10 @@ fun KtClass.renameBindViewProperties(project: Project, uniquePrefix: String): Ps
     getBindViewProperties()
         .forEach { (property, xmlId) ->
             property.renameAllReferences(project, "$uniquePrefix${xmlId.snakeToLowerCamelCase()}")
-            whenIndexed(project) { property.astReplace(PsiWhiteSpaceImpl("")) }
+            whenIndexed(project) {
+                property.astReplace(PsiWhiteSpaceImpl(""))
+                containingFile.commitAndUnblockDocument()
+            }
         }
 
     return containingFile
