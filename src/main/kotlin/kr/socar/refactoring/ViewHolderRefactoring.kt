@@ -8,11 +8,14 @@ import com.intellij.psi.search.FilenameIndex
 import kr.socar.ext.snakeToUpperCamelCase
 import org.jetbrains.kotlin.idea.core.util.toPsiFile
 import org.jetbrains.kotlin.idea.formatter.commitAndUnblockDocument
+import org.jetbrains.kotlin.idea.quickfix.createFromUsage.callableBuilder.getReturnTypeReference
 import org.jetbrains.kotlin.idea.util.projectStructure.allModules
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.astReplace
 import org.jetbrains.kotlin.psi.psiUtil.collectDescendantsOfType
 import org.jetbrains.kotlin.psi.psiUtil.findDescendantOfType
+import org.jetbrains.kotlin.psi.psiUtil.findFunctionByName
+import org.jetbrains.plugins.groovy.lang.psi.util.backwardSiblings
 
 fun runViewHolderRefactoring(project: Project) {
     project.allModules().forEach { module ->
@@ -23,12 +26,18 @@ fun runViewHolderRefactoring(project: Project) {
                 val uniquePrefix = "someExtinguishableTemporaryName_"
                 val refactoredClasses = ktFile
                     .collectDescendantsOfType<KtClass>()
-                    .filter { ktClass ->
-                        ktClass.superTypeListEntries.any {
-                            it.findDescendantOfType<LeafPsiElement>()?.text == "BaseViewHolder2"
-                        }
-                    }
                     .mapNotNull {
+                        it.containingFile.commitAndUnblockDocument()
+                        it.applyAdapterViewBinding(
+                            project,
+                            uniquePrefix,
+                            when (module.name) {
+                                "root.app" -> "socar.Socar"
+                                "root.pairing-owner" -> "kr.socar.pairing.owner"
+                                else -> "unexpected"
+                            },
+                        )
+                        it.containingFile.commitAndUnblockDocument()
                         it.applyViewHolderViewBinding(
                             project,
                             uniquePrefix,
@@ -40,6 +49,66 @@ fun runViewHolderRefactoring(project: Project) {
                         )
                     }
             }
+    }
+}
+
+fun KtClass.applyAdapterViewBinding(
+    project: Project,
+    uniquePrefix: String,
+    appPrefix: String
+): KtClass? {
+    val helper = AdapterHelper.create(this) ?: return null
+
+    whenIndexed(project) {
+        helper.replaceConstructor()
+        helper.replaceFunctionOnInstantiateViewHolder()
+        containingFile.commitAndUnblockDocument()
+    }
+    val containingFile = renameBindViewProperties(project, uniquePrefix)
+
+    whenIndexed(project) {
+        containingFile.commitAndUnblockDocument()
+        PsiDocumentManager.getInstance(project)
+            .getDocument(containingFile)
+            ?.let { document ->
+                val replaced = document.text
+                    .addImport("kr.socar.common.recyclerview.widget.BaseBindingListAdapter")
+                    .addImport("kr.socar.common.recyclerview.widget.BaseBindingViewHolder")
+                document.setText(replaced)
+            }
+        println("replaced ${this.name}")
+    }
+
+    return this
+}
+
+class AdapterHelper private constructor(private val ktClass: KtClass) {
+    val superConstructor = ktClass.getSuperTypeConstructor("BaseListAdapter")!!
+    fun replaceConstructor() {
+        superConstructor.findDescendantOfType<KtTypeArgumentList>()?.arguments
+            ?.let { arguments ->
+                arguments[1].backwardSiblings()
+                    .filter { it.text == "," }
+                    .forEach { it.astReplace(PsiWhiteSpaceImpl("")) }
+                arguments[1].astReplace(PsiWhiteSpaceImpl(""))
+                ktClass.containingFile.commitAndUnblockDocument()
+            }
+
+        superConstructor.findDescendantOfType<LeafPsiElement>()
+            ?.astReplace(PsiWhiteSpaceImpl("BaseBindingListAdapter"))
+    }
+
+    fun replaceFunctionOnInstantiateViewHolder() {
+        ktClass.findFunctionByName("onInstantiateViewHolder")
+            ?.getReturnTypeReference()
+            ?.typeElement
+            ?.firstChild
+            ?.astReplace(PsiWhiteSpaceImpl("BaseBindingViewHolder"))
+    }
+
+    companion object {
+        fun create(ktClass: KtClass): AdapterHelper? =
+            ktClass.getSuperTypeConstructor("BaseListAdapter")?.let { AdapterHelper(ktClass) }
     }
 }
 
@@ -77,10 +146,12 @@ fun KtClass.applyViewHolderViewBinding(
     return this
 }
 
-class ViewHolder2KtClass(val ktClass: KtClass) {
+fun KtClass.getSuperTypeConstructor(name: String): KtSuperTypeListEntry? =
+    superTypeListEntries.firstOrNull { it.findDescendantOfType<LeafPsiElement>()?.text == name }
+
+class ViewHolder2KtClass(private val ktClass: KtClass) {
     val baseViewHolderConstructor by lazy {
-        ktClass.superTypeListEntries
-            .firstOrNull { it.findDescendantOfType<LeafPsiElement>()?.text == "BaseViewHolder2" }
+        ktClass.getSuperTypeConstructor("BaseViewHolder2")
             ?.findDescendantOfType<KtValueArgumentList>()
     }
 
@@ -94,6 +165,7 @@ class ViewHolder2KtClass(val ktClass: KtClass) {
             .firstOrNull()
             ?.let {
                 val itemHolderType = it[1].text
+                ktClass.containingFile.commitAndUnblockDocument()
                 it[1].astReplace(PsiWhiteSpaceImpl(bindingName))
                 ktClass.containingFile.commitAndUnblockDocument()
                 it[0].astReplace(PsiWhiteSpaceImpl(itemHolderType))
