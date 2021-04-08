@@ -2,6 +2,8 @@ package kr.socar.refactoring
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiFile
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl
 import com.intellij.psi.search.FilenameIndex
@@ -27,7 +29,6 @@ fun runViewHolderRefactoring(project: Project) {
                 val refactoredClasses = ktFile
                     .collectDescendantsOfType<KtClass>()
                     .mapNotNull {
-                        it.containingFile.commitAndUnblockDocument()
                         it.applyAdapterViewBinding(
                             project,
                             uniquePrefix,
@@ -37,7 +38,6 @@ fun runViewHolderRefactoring(project: Project) {
                                 else -> "unexpected"
                             },
                         )
-                        it.containingFile.commitAndUnblockDocument()
                         it.applyViewHolderViewBinding(
                             project,
                             uniquePrefix,
@@ -62,12 +62,11 @@ fun KtClass.applyAdapterViewBinding(
     whenIndexed(project) {
         helper.replaceConstructor()
         helper.replaceFunctionOnInstantiateViewHolder()
-        containingFile.commitAndUnblockDocument()
+        listOf(containingFile)
     }
-    val containingFile = renameBindViewProperties(project, uniquePrefix)
+    renameBindViewProperties(project, uniquePrefix)
 
     whenIndexed(project) {
-        containingFile.commitAndUnblockDocument()
         PsiDocumentManager.getInstance(project)
             .getDocument(containingFile)
             ?.let { document ->
@@ -77,6 +76,8 @@ fun KtClass.applyAdapterViewBinding(
                 document.setText(replaced)
             }
         println("replaced ${this.name}")
+
+        listOf(containingFile)
     }
 
     return this
@@ -85,17 +86,10 @@ fun KtClass.applyAdapterViewBinding(
 class AdapterHelper private constructor(private val ktClass: KtClass) {
     val superConstructor = ktClass.getSuperTypeConstructor("BaseListAdapter")!!
     fun replaceConstructor() {
-        superConstructor.findDescendantOfType<KtTypeArgumentList>()?.arguments
-            ?.let { arguments ->
-                arguments[1].backwardSiblings()
-                    .filter { it.text == "," }
-                    .forEach { it.astReplace(PsiWhiteSpaceImpl("")) }
-                arguments[1].astReplace(PsiWhiteSpaceImpl(""))
-                ktClass.containingFile.commitAndUnblockDocument()
-            }
-
-        superConstructor.findDescendantOfType<LeafPsiElement>()
-            ?.astReplace(PsiWhiteSpaceImpl("BaseBindingListAdapter"))
+        superConstructor.findDescendantOfType<KtTypeArgumentList>()?.let {
+            it.textReplace(ktClass.containingFile, "<${it.arguments[0].text}>")
+        }
+        superConstructor.findDescendantOfType<LeafPsiElement>()?.textReplace(ktClass.containingFile, "BaseBindingListAdapter")
     }
 
     fun replaceFunctionOnInstantiateViewHolder() {
@@ -103,7 +97,7 @@ class AdapterHelper private constructor(private val ktClass: KtClass) {
             ?.getReturnTypeReference()
             ?.typeElement
             ?.firstChild
-            ?.astReplace(PsiWhiteSpaceImpl("BaseBindingViewHolder"))
+            ?.textReplace(ktClass.containingFile, "BaseBindingViewHolder")
     }
 
     companion object {
@@ -123,14 +117,10 @@ fun KtClass.applyViewHolderViewBinding(
     val bindingName = wrapper.bindingName
     println("apply view binding to $name: $bindingName")
 
-    whenIndexed(project) {
-        wrapper.replaceConstructor()
-        containingFile.commitAndUnblockDocument()
-    }
-    val containingFile = renameBindViewProperties(project, uniquePrefix)
+    wrapper.replaceConstructor()
+    renameBindViewProperties(project, uniquePrefix)
 
     whenIndexed(project) {
-        containingFile.commitAndUnblockDocument()
         PsiDocumentManager.getInstance(project)
             .getDocument(containingFile)
             ?.let { document ->
@@ -141,6 +131,8 @@ fun KtClass.applyViewHolderViewBinding(
                 document.setText(replaced)
             }
         println("replaced ${this.name}")
+
+        listOf(containingFile)
     }
 
     return this
@@ -165,20 +157,22 @@ class ViewHolder2KtClass(private val ktClass: KtClass) {
             .firstOrNull()
             ?.let {
                 val itemHolderType = it[1].text
-                ktClass.containingFile.commitAndUnblockDocument()
-                it[1].astReplace(PsiWhiteSpaceImpl(bindingName))
-                ktClass.containingFile.commitAndUnblockDocument()
-                it[0].astReplace(PsiWhiteSpaceImpl(itemHolderType))
-                ktClass.containingFile.commitAndUnblockDocument()
+                it[1].textReplace(ktClass.containingFile, bindingName)
+                it[0].textReplace(ktClass.containingFile, itemHolderType)
             }
-        baseViewHolderConstructor!!.arguments[1].astReplace(PsiWhiteSpaceImpl("parent"))
-        ktClass.containingFile.commitAndUnblockDocument()
-        baseViewHolderConstructor!!.arguments[0].astReplace(PsiWhiteSpaceImpl("$bindingName::inflate"))
-        ktClass.containingFile.commitAndUnblockDocument()
+        baseViewHolderConstructor!!.arguments[1].textReplace(ktClass.containingFile, "parent")
+        baseViewHolderConstructor!!.arguments[0].textReplace(ktClass.containingFile, "$bindingName::inflate")
 
         ktClass.superTypeListEntries
             .firstOrNull { it.findDescendantOfType<LeafPsiElement>()?.text == "BaseViewHolder2" }
             ?.findDescendantOfType<LeafPsiElement>()
-            ?.astReplace(PsiWhiteSpaceImpl("BaseBindingViewHolder"))
+            ?.textReplace(ktClass.containingFile, "BaseBindingViewHolder")
+    }
+}
+
+fun PsiElement.textReplace(file: PsiFile, text: String) {
+    whenIndexed(file.project) {
+        astReplace(PsiWhiteSpaceImpl(text))
+        listOf(file)
     }
 }

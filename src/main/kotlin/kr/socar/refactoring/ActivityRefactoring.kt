@@ -51,14 +51,14 @@ fun runActivityRefactoring(project: Project) {
 
                 if (refactoredClasses.isNotEmpty()) {
                     whenIndexed(project) {
-                        ktFile.commitAndUnblockDocument()
-
                         // 파일을 새로고침해서 인덱싱을 다시 잡는다.
                         ktFile.virtualFile.refresh(false, false)
                         // 코드 정리작업.
                         OptimizeImportsProcessor(project, ktFile).run()
                         RearrangeCodeProcessor(ktFile).run()
                         ReformatCodeProcessor(ktFile, false).run()
+
+                        listOf(ktFile)
                     }
                 }
             }
@@ -76,10 +76,9 @@ fun KtClass.applyActivityViewBinding(
 
     val bindingName = getBindingName() ?: return null
     println("apply view binding to $name: $bindingName")
-    val containingFile = renameBindViewProperties(project, uniquePrefix)
+    renameBindViewProperties(project, uniquePrefix)
 
     whenIndexed(project) {
-        containingFile.commitAndUnblockDocument()
         PsiDocumentManager.getInstance(project)
             .getDocument(containingFile)
             ?.let { document ->
@@ -97,6 +96,8 @@ fun KtClass.applyActivityViewBinding(
                 document.setText(replaced)
             }
         println("replaced ${this.name}")
+
+        listOf(containingFile)
     }
 
     return this
@@ -115,17 +116,12 @@ fun String.addImport(classPath: String): String {
     else "(package .*\n)".toRegex().replace(this) { "${it.value}import $classPath\n" }
 }
 
-fun KtClass.renameBindViewProperties(project: Project, uniquePrefix: String): PsiFile {
+fun KtClass.renameBindViewProperties(project: Project, uniquePrefix: String) {
     getBindViewProperties()
         .forEach { (property, xmlId) ->
             property.renameAllReferences(project, "$uniquePrefix${xmlId.snakeToLowerCamelCase()}")
-            whenIndexed(project) {
-                property.astReplace(PsiWhiteSpaceImpl(""))
-                containingFile.commitAndUnblockDocument()
-            }
+            property.textReplace(containingFile, "")
         }
-
-    return containingFile
 }
 
 fun KtClass.getBindViewProperties() = getProperties()
@@ -166,18 +162,23 @@ fun PsiElement.collectChildrenByName(name: String) = children
 
 fun PsiNamedElement.renameAllReferences(project: Project, newName: String) {
     whenIndexed(project) {
-        ReferencesSearch.search(this).forEach { it.handleElementRename(newName) }
+        val files = ReferencesSearch.search(this).map {
+            it.handleElementRename(newName)
+            it.resolve()?.containingFile
+        }
         this.setName(newName)
         println("[Rename] ${this.elementType} ${this.name} -> $newName")
+        files.plus(containingFile)
     }
 }
 
-fun <T> whenIndexed(project: Project, action: () -> T) {
+fun whenIndexed(project: Project, action: () -> Iterable<PsiFile?>) {
     // 로딩되면 기본적으로 index 가 없는 기본 편집만 가능한 상태(dumb)일 것이다.
     DumbService.getInstance(project).runWhenSmart {
         // 따라서 인덱싱이 끝나면(smart) 작업을 수행한다.
         WriteCommandAction.runWriteCommandAction(project) {
-            action()
+            val filesToCommit = action()
+            filesToCommit.filterNotNull().toSet().forEach { it.commitAndUnblockDocument() }
         }
     }
 }
