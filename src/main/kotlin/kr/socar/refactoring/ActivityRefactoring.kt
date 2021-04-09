@@ -4,12 +4,14 @@ import com.intellij.codeInsight.actions.OptimizeImportsProcessor
 import com.intellij.codeInsight.actions.RearrangeCodeProcessor
 import com.intellij.codeInsight.actions.ReformatCodeProcessor
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiNamedElement
+import com.intellij.psi.impl.file.impl.FileManager
 import com.intellij.psi.impl.source.tree.LeafPsiElement
 import com.intellij.psi.impl.source.tree.PsiWhiteSpaceImpl
 import com.intellij.psi.search.FilenameIndex
@@ -180,5 +182,29 @@ fun whenIndexed(project: Project, action: () -> Iterable<PsiFile?>) {
             val filesToCommit = action()
             filesToCommit.filterNotNull().toSet().forEach { it.commitAndUnblockDocument() }
         }
+    }
+}
+
+fun reformatFile(file: PsiFile) {
+    // 파일을 새로고침해서 인덱싱을 다시 잡는다.
+    //file.virtualFile.refresh(false, false)
+    whenIndexed(file.project) {
+        val docManager = PsiDocumentManager.getInstance(file.project)
+        OptimizeImportsProcessor(file.project, file).run()
+        docManager.getDocument(file)?.let {
+            docManager.commitDocument(it)
+            FileDocumentManager.getInstance().saveDocument(it)
+        }
+        ReformatCodeProcessor(file, false).run()
+        docManager.getDocument(file)?.let {
+            docManager.commitDocument(it)
+            FileDocumentManager.getInstance().saveDocument(it)
+        }
+        RearrangeCodeProcessor(file).run()
+        docManager.getDocument(file)?.let {
+            docManager.commitDocument(it)
+            FileDocumentManager.getInstance().saveDocument(it)
+        }
+        listOf(file)
     }
 }

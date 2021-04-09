@@ -20,15 +20,17 @@ import org.jetbrains.kotlin.psi.psiUtil.findFunctionByName
 import org.jetbrains.plugins.groovy.lang.psi.util.backwardSiblings
 
 fun runViewHolderRefactoring(project: Project) {
+    val filesToReformat = mutableSetOf<PsiFile>()
+
     project.allModules().forEach { module ->
         FilenameIndex.getAllFilesByExt(project, "kt", module.moduleScope)
             .mapNotNull { it.toPsiFile(project) as? KtFile }
-            .map { ktFile ->
+            .forEach { ktFile ->
                 println(ktFile)
                 val uniquePrefix = "someExtinguishableTemporaryName_"
-                val refactoredClasses = ktFile
+                ktFile
                     .collectDescendantsOfType<KtClass>()
-                    .mapNotNull {
+                    .forEach {
                         it.applyAdapterViewBinding(
                             project,
                             uniquePrefix,
@@ -37,7 +39,8 @@ fun runViewHolderRefactoring(project: Project) {
                                 "root.pairing-owner" -> "kr.socar.pairing.owner"
                                 else -> "unexpected"
                             },
-                        )
+                        )?.also { filesToReformat.add(ktFile) }
+
                         it.applyViewHolderViewBinding(
                             project,
                             uniquePrefix,
@@ -46,10 +49,12 @@ fun runViewHolderRefactoring(project: Project) {
                                 "root.pairing-owner" -> "kr.socar.pairing.owner"
                                 else -> "unexpected"
                             },
-                        )
+                        )?.also { filesToReformat.add(ktFile) }
                     }
             }
     }
+
+    filesToReformat.forEach { reformatFile(it) }
 }
 
 fun KtClass.applyAdapterViewBinding(
@@ -73,6 +78,7 @@ fun KtClass.applyAdapterViewBinding(
                 val replaced = document.text
                     .addImport("kr.socar.common.recyclerview.widget.BaseBindingListAdapter")
                     .addImport("kr.socar.common.recyclerview.widget.BaseBindingViewHolder")
+                    .addImport("kr.socar.common.recyclerview.widget.BlankBindingViewHolder")
                 document.setText(replaced)
             }
         println("replaced ${this.name}")
@@ -93,6 +99,10 @@ class AdapterHelper private constructor(private val ktClass: KtClass) {
     }
 
     fun replaceFunctionOnInstantiateViewHolder() {
+        ktClass.findFunctionByName("onInstantiateViewHolder")
+            ?.collectDescendantsOfType<KtNameReferenceExpression>()
+            ?.filter { it.text == "BlankViewHolder" }
+            ?.forEach { it.textReplace(ktClass.containingFile, "BlankBindingViewHolder") }
         ktClass.findFunctionByName("onInstantiateViewHolder")
             ?.getReturnTypeReference()
             ?.typeElement
